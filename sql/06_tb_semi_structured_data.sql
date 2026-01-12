@@ -1,35 +1,38 @@
-/***************************************************************************************************
-  _______           _            ____          _             
- |__   __|         | |          |  _ \        | |            
-    | |  __ _  ___ | |_  _   _  | |_) | _   _ | |_  ___  ___ 
+/*----------------------------------------------------------------------------
+  _______           _            ____          _
+ |__   __|         | |          |  _ \        | |
+    | |  __ _  ___ | |_  _   _  | |_) | _   _ | |_  ___  ___
     | | / _` |/ __|| __|| | | | |  _ < | | | || __|/ _ \/ __|
     | || (_| |\__ \| |_ | |_| | | |_) || |_| || |_|  __/\__ \
     |_| \__,_||___/ \__| \__, | |____/  \__, | \__|\___||___/
-                          __/ |          __/ |               
-                         |___/          |___/            
+                          __/ |          __/ |
+                         |___/          |___/
 Quickstart:   Tasty Bytes - Zero to Snowflake - Semi-Structured Data
-Version:      v2     
+Version:      v2
 Author:       Jacob Kranzler
 Copyright(c): 2024 Snowflake Inc. All rights reserved.
-****************************************************************************************************
+------------------------------------------------------------------------------
 半構造化データ
     1 - 半構造化データとVariantデータ型
-    2 - ドットとブラケット表記 + Flattenを使用した半構造化データのクエリ
+    2 - ドットとブラケット表記 + Flattenを使用した
+        半構造化データのクエリ
     3 - フラット化したデータのビジネスユーザーへの提供
     4 - Snowsightでの処理された非構造化データの分析
-****************************************************************************************************
+------------------------------------------------------------------------------
 SUMMARY OF CHANGES
 Date(yyyy-mm-dd)    Author              Comments
-------------------- ------------------- ------------------------------------------------------------
+------------------- ------------------- ----------------------------------------
 2024-05-23          Jacob Kranzler      Initial Release
-***************************************************************************************************/
+2025-01-11          Sho Tanaka          Initial commit with JA
+------------------------------------------------------------------------------*/
 
-/*----------------------------------------------------------------------------------
+/*------------------------------------------------------------------------
 ステップ 1 - 半構造化データとVariantデータ型
 
- Tasty Bytesのデータエンジニアとして、メニューのデータをプロファイルし、下流のビジネスユーザーに
- 食事と成分データを提供するAnalyticsレイヤービューを開発するという任務を受けました。
-----------------------------------------------------------------------------------*/
+ Tasty Bytesのデータエンジニアとして、メニューのデータをプロファイル
+ し、下流のビジネスユーザーに食事と成分データを提供する
+ Analyticsレイヤービューを開発するという任務を受けました。
+------------------------------------------------------------------------*/
 
 -- まず、ロール、ウェアハウス、およびデータベースのコンテキストを設定する必要があります。
 USE ROLE tb_data_engineer;
@@ -38,7 +41,16 @@ USE DATABASE tb_101;
 
 
 -- セッションにクエリタグを割り当てます。
-ALTER SESSION SET query_tag = '{"origin":"sf_sit","name":"tb_zts,"version":{"major":1, "minor":1},"attributes":{"medium":"quickstart", "source":"tastybytes", "vignette": "semi_structured"}}';
+ALTER SESSION SET query_tag = '{
+    "origin":"sf_sit",
+    "name":"tb_zts",
+    "version":{"major":1, "minor":1},
+    "attributes":{
+        "medium":"quickstart",
+        "source":"tastybytes",
+        "vignette": "semi_structured"
+    }
+}';
 
 
 -- 食事と成分データがどこに保存されているかを確認するために、POSシステムから受け取っている
@@ -56,25 +68,30 @@ FROM raw_pos.menu;
 SHOW COLUMNS IN raw_pos.menu;
 
     /**
-     Variant: Snowflakeは、JSON、Avro、ORC、またはParquet形式のデータをARRAY、OBJECT、およびVARIANTデータの
+     Variant: Snowflakeは、JSON、Avro、ORC、または
+     Parquet形式のデータをARRAY、OBJECT、およびVARIANTデータの
      階層に変換し、直接VARIANT列に保存することができます。
     **/
 
 
-/*----------------------------------------------------------------------------------
+/*------------------------------------------------------------------------
 ステップ 2 - 半構造化データのクエリ
 
  「Menu Item Health Metrics Object」列内のデータはJSON形式です。
- 
- このステップでは、Snowflakeのネイティブ半構造化サポートを活用して、この列をクエリし、
- フラット化して、下流のユーザーにわかりやすい表形式でデータを提供できるように準備します。
-----------------------------------------------------------------------------------*/
 
--- Variant列から第一階層の要素を抽出するためには、Variant列の名前と第一階層の識別子の間にコロン「:」を挿入します。
--- これを使用して、「Menu Item Id」と「Menu Item Health Metrics Object」を抽出してみましょう。
+ このステップでは、Snowflakeのネイティブ半構造化サポートを活用して、
+ この列をクエリし、フラット化して、下流のユーザーにわかりやすい
+ 表形式でデータを提供できるように準備します。
+------------------------------------------------------------------------*/
+
+-- Variant列から第一階層の要素を抽出するためには、
+-- Variant列の名前と第一階層の識別子の間にコロン「:」を挿入します。
+-- これを使用して、「Menu Item Id」と
+-- 「Menu Item Health Metrics Object」を抽出してみましょう。
 SELECT
     menu_item_health_metrics_obj:menu_item_id AS menu_item_id,
-    menu_item_health_metrics_obj:menu_item_health_metrics AS menu_item_health_metrics
+    menu_item_health_metrics_obj:menu_item_health_metrics
+        AS menu_item_health_metrics
 FROM raw_pos.menu;
 
 
@@ -88,20 +105,24 @@ FROM raw_pos.menu;
 --> ドット表記とLateral Flatten
 SELECT
     m.menu_item_name,
-    m.menu_item_health_metrics_obj:menu_item_id AS menu_item_id,
-    obj.value:"ingredients"::ARRAY AS ingredients
-FROM raw_pos.menu m, 
-    LATERAL FLATTEN (input => m.menu_item_health_metrics_obj:menu_item_health_metrics) obj
+    obj.value:"ingredients"::ARRAY AS ingredients,
+    m.menu_item_health_metrics_obj:menu_item_id AS menu_item_id
+FROM raw_pos.menu AS m,
+    LATERAL FLATTEN(
+        input => m.menu_item_health_metrics_obj:menu_item_health_metrics
+    ) AS obj
 ORDER BY menu_item_id;
 
 
 --> ブラケット表記とLateral Flatten
 SELECT
     m.menu_item_name,
-    m.menu_item_health_metrics_obj['menu_item_id'] AS menu_item_id,
-    obj.value['ingredients']::ARRAY AS ingredients
-FROM raw_pos.menu m,
-    LATERAL FLATTEN (input => m.menu_item_health_metrics_obj:menu_item_health_metrics) obj
+    obj.value['ingredients']::ARRAY AS ingredients,
+    m.menu_item_health_metrics_obj['menu_item_id'] AS menu_item_id
+FROM raw_pos.menu AS m,
+    LATERAL FLATTEN(
+        input => m.menu_item_health_metrics_obj:menu_item_health_metrics
+    ) AS obj
 ORDER BY menu_item_id;
 
     /**
@@ -109,7 +130,7 @@ ORDER BY menu_item_id;
      ARRAYには0個以上のデータが含まれています。各要素には、その位置を指定してアクセスします。
     **/
 
-    
+
 /*--
  半構造化データ処理を完了するために、成分の配列に加えて、残りの食事関連列を
  ドット表記とブラケット表記の両方を使用して抽出しましょう。
@@ -117,51 +138,60 @@ ORDER BY menu_item_id;
 
 --> ドット表記とLateral Flatten
 SELECT
-    m.menu_item_health_metrics_obj:menu_item_id AS menu_item_id,
     m.menu_item_name,
     obj.value:"ingredients"::VARIANT AS ingredients,
     obj.value:"is_healthy_flag"::VARCHAR(1) AS is_healthy_flag,
     obj.value:"is_gluten_free_flag"::VARCHAR(1) AS is_gluten_free_flag,
     obj.value:"is_dairy_free_flag"::VARCHAR(1) AS is_dairy_free_flag,
-    obj.value:"is_nut_free_flag"::VARCHAR(1) AS is_nut_free_flag
-FROM raw_pos.menu m,
-    LATERAL FLATTEN (input => m.menu_item_health_metrics_obj:menu_item_health_metrics) obj;
+    obj.value:"is_nut_free_flag"::VARCHAR(1) AS is_nut_free_flag,
+    m.menu_item_health_metrics_obj:menu_item_id AS menu_item_id
+FROM raw_pos.menu AS m,
+    LATERAL FLATTEN(
+        input => m.menu_item_health_metrics_obj:menu_item_health_metrics
+    ) AS obj;
 
-    
+
 --> ブラケット表記とLateral Flatten
 SELECT
-    m.menu_item_health_metrics_obj['menu_item_id'] AS menu_item_id,
     m.menu_item_name,
     obj.value['ingredients']::VARIANT AS ingredients,
     obj.value['is_healthy_flag']::VARCHAR(1) AS is_healthy_flag,
     obj.value['is_gluten_free_flag']::VARCHAR(1) AS is_gluten_free_flag,
     obj.value['is_dairy_free_flag']::VARCHAR(1) AS is_dairy_free_flag,
-    obj.value['is_nut_free_flag']::VARCHAR(1) AS is_nut_free_flag
-FROM raw_pos.menu m,
-    LATERAL FLATTEN (input => m.menu_item_health_metrics_obj:menu_item_health_metrics) obj;
+    obj.value['is_nut_free_flag']::VARCHAR(1) AS is_nut_free_flag,
+    m.menu_item_health_metrics_obj['menu_item_id'] AS menu_item_id
+FROM raw_pos.menu AS m,
+    LATERAL FLATTEN(
+        input => m.menu_item_health_metrics_obj:menu_item_health_metrics
+    ) AS obj;
 
-    
-/*----------------------------------------------------------------------------------
+
+/*------------------------------------------------------------------------
 ステップ 3 - フラット化したデータのビジネスユーザーへの提供
 
- 必要なデータがすべて抽出され、フラット化されて表形式で利用可能になりました。
- このステップでは、フラット化した列を含むメニューテーブルを、HarmonizedおよびAnalyticsレイヤーに
- ビューとして提供します。
+ 必要なデータがすべて抽出され、フラット化されて
+ 表形式で利用可能になりました。
+ このステップでは、フラット化した列を含むメニューテーブルを、
+ HarmonizedおよびAnalyticsレイヤーにビューとして提供します。
 
- Medallionアーキテクチャに慣れている場合、HarmonizedレイヤーはSilver、AnalyticsレイヤーはGold
- と考えることができます。
-----------------------------------------------------------------------------------*/
+ Medallionアーキテクチャに慣れている場合、HarmonizedレイヤーはSilver、
+ AnalyticsレイヤーはGoldと考えることができます。
+------------------------------------------------------------------------*/
 
--- まず、前のドット表記クエリに列を追加し、Harmonizedレイヤーに新しいメニュービューとして活用します。
+-- まず、前のドット表記クエリに列を追加し、
+-- Harmonizedレイヤーに新しいメニュービューとして活用します。
 CREATE OR REPLACE VIEW harmonized.menu_v
-COMMENT = 'Menu level metrics including Truck Brands and Menu Item details including Cost, Price, Ingredients and Dietary Restrictions'
+COMMENT = $$
+Menu level metrics including Truck Brands and Menu Item details
+including Cost, Price, Ingredients and Dietary Restrictions
+$$
     AS
 SELECT
     m.menu_id,
     m.menu_type_id,
     m.menu_type,
     m.truck_brand_name,
-    m.menu_item_health_metrics_obj:menu_item_id::integer AS menu_item_id,
+    m.menu_item_health_metrics_obj:menu_item_id::INTEGER AS menu_item_id,
     m.menu_item_name,
     m.item_category,
     m.item_subcategory,
@@ -172,19 +202,26 @@ SELECT
     obj.value:"is_gluten_free_flag"::VARCHAR(1) AS is_gluten_free_flag,
     obj.value:"is_dairy_free_flag"::VARCHAR(1) AS is_dairy_free_flag,
     obj.value:"is_nut_free_flag"::VARCHAR(1) AS is_nut_free_flag
-FROM raw_pos.menu m,
-    LATERAL FLATTEN (input => m.menu_item_health_metrics_obj:menu_item_health_metrics) obj;
+FROM raw_pos.menu AS m,
+    LATERAL FLATTEN(
+        input => m.menu_item_health_metrics_obj:menu_item_health_metrics
+    ) AS obj;
 
-    
--- Harmonizedビューにフラット化ロジックが組み込まれたので、データを
--- Analyticsスキーマに昇格させ、さまざまなビジネスユーザーがアクセスできるようにします。
+
+-- Harmonizedビューにフラット化ロジックが組み込まれたので、
+-- データをAnalyticsスキーマに昇格させ、
+-- さまざまなビジネスユーザーがアクセスできるようにします。
 CREATE OR REPLACE VIEW analytics.menu_v
-COMMENT = 'Menu level metrics including Truck Brands and Menu Item details including Cost, Price, Ingredients and Dietary Restrictions'
+COMMENT = $$
+Menu level metrics including Truck Brands and Menu Item details
+including Cost, Price, Ingredients and Dietary Restrictions
+$$
     AS
 SELECT
     *
     EXCLUDE (menu_type_id)  -- MENU_TYPE_IDを除外する
-    RENAME (truck_brand_name AS brand_name) -- TRUCK_BRAND_NAMEをBRAND_NAMEにリネームする
+    -- TRUCK_BRAND_NAMEをBRAND_NAMEにリネームする
+    RENAME (truck_brand_name AS brand_name)
 FROM harmonized.menu_v;
 
     /**
@@ -193,7 +230,7 @@ FROM harmonized.menu_v;
     **/
 
 -- 次に進む前に、このビューを使用してBetter Off Breadブランドの結果を確認しましょう。
-SELECT 
+SELECT
     brand_name,
     menu_item_name,
     sale_price_usd,
@@ -210,16 +247,18 @@ WHERE brand_name = 'Better Off Bread';
 GRANT SELECT ON analytics.menu_v TO ROLE tb_dev;
 
 
-/*----------------------------------------------------------------------------------
+/*------------------------------------------------------------------------
 ステップ 4 - 配列関数の活用
 
- Analyticsレイヤーでメニュービューを利用できるようになったので、Tasty Bytesの
- 開発者の業務に移りましょう。このステップでは、Tasty Bytesのリーダーシップチームから
- 提出されたフードトラックメニューに関連する質問に対応します。
- 
- この過程で、Snowflakeが半構造化データに対して追加のコピーや複雑なデータ変換を行わずに
- リレーショナルなクエリエクスペリエンスを提供できることがわかるでしょう。
-----------------------------------------------------------------------------------*/
+ Analyticsレイヤーでメニュービューを利用できるようになったので、
+ Tasty Bytesの開発者の業務に移りましょう。このステップでは、
+ Tasty Bytesのリーダーシップチームから提出された
+ フードトラックメニューに関連する質問に対応します。
+
+ この過程で、Snowflakeが半構造化データに対して追加のコピーや
+ 複雑なデータ変換を行わずにリレーショナルなクエリエクスペリエンスを
+ 提供できることがわかるでしょう。
+------------------------------------------------------------------------*/
 
 -- このステップを開始するにあたり、開発者ロールに切り替え、開発者ウェアハウスを使用します。
 USE ROLE tb_dev;
@@ -231,7 +270,7 @@ SELECT
     m.menu_item_id,
     m.menu_item_name,
     m.ingredients
-FROM analytics.menu_v m
+FROM analytics.menu_v AS m
 WHERE ARRAY_CONTAINS('Lettuce'::VARIANT, m.ingredients);
 
     /**
@@ -244,13 +283,14 @@ SELECT
     m1.menu_item_name,
     m2.brand_name AS overlap_brand,
     m2.menu_item_name AS overlap_menu_item_name,
-    ARRAY_INTERSECTION(m1.ingredients, m2.ingredients) AS overlapping_ingredients
-FROM analytics.menu_v m1
-JOIN analytics.menu_v m2
+    ARRAY_INTERSECTION(m1.ingredients, m2.ingredients)
+        AS overlapping_ingredients
+FROM analytics.menu_v AS m1
+INNER JOIN analytics.menu_v AS m2
     ON m1.menu_item_id <> m2.menu_item_id -- 同じメニュー項目同士の結合を避ける
     AND m1.menu_type <> m2.menu_type
-WHERE 1=1
-    AND m1.item_category  <> 'Beverage' -- 飲料を除外
+WHERE 1 = 1
+    AND m1.item_category <> 'Beverage' -- 飲料を除外
     AND ARRAYS_OVERLAP(m1.ingredients, m2.ingredients) -- 重複する成分を持つもののみを返す
 ORDER BY ARRAY_SIZE(overlapping_ingredients) DESC;-- 重複する成分の数が多い順に並べる
 
@@ -263,31 +303,40 @@ ORDER BY ARRAY_SIZE(overlapping_ingredients) DESC;-- 重複する成分の数が
 -- 合計で何件のメニュー項目があり、そのうちどれが食事制限に対応していますか？
 SELECT
     COUNT(DISTINCT menu_item_id) AS total_menu_items,
-    SUM(CASE WHEN is_gluten_free_flag = 'Y' THEN 1 ELSE 0 END) AS gluten_free_item_count,
-    SUM(CASE WHEN is_dairy_free_flag = 'Y' THEN 1 ELSE 0 END) AS dairy_free_item_count,
-    SUM(CASE WHEN is_nut_free_flag = 'Y' THEN 1 ELSE 0 END) AS nut_free_item_count
-FROM analytics.menu_v m;
+    SUM(CASE WHEN is_gluten_free_flag = 'Y' THEN 1 ELSE 0 END)
+        AS gluten_free_item_count,
+    SUM(CASE WHEN is_dairy_free_flag = 'Y' THEN 1 ELSE 0 END)
+        AS dairy_free_item_count,
+    SUM(CASE WHEN is_nut_free_flag = 'Y' THEN 1 ELSE 0 END)
+        AS nut_free_item_count
+FROM analytics.menu_v;
 
 
--- 「Plant Palace」、「Peking Truck」、「Better Off Bread」ブランドはどのように比較されますか？
-    --> Snowsightチャートタイプ: バー | 方向: 最初のオプション | グルーピング: 最初のオプション
-        --> Y軸: BRAND_NAME | バー: GLUTEN_FREE_ITEM_COUNT、DAIRY_FREE_ITEM_COUNT、NUT_FREE_ITEM_COUNT
+-- 「Plant Palace」、「Peking Truck」、「Better Off Bread」ブランドは
+-- どのように比較されますか？
+-- Snowsightチャートタイプ: バー | 方向: 最初のオプション
+-- グルーピング: 最初のオプション
+-- Y軸: BRAND_NAME
+-- バー: GLUTEN_FREE_ITEM_COUNT、DAIRY_FREE_ITEM_COUNT、NUT_FREE_ITEM_COUNT
 SELECT
     m.brand_name,
-    SUM(CASE WHEN is_gluten_free_flag = 'Y' THEN 1 ELSE 0 END) AS gluten_free_item_count,
-    SUM(CASE WHEN is_dairy_free_flag = 'Y' THEN 1 ELSE 0 END) AS dairy_free_item_count,
-    SUM(CASE WHEN is_nut_free_flag = 'Y' THEN 1 ELSE 0 END) AS nut_free_item_count
-FROM analytics.menu_v m
-WHERE m.brand_name IN ('Plant Palace', 'Peking Truck','Revenge of the Curds')
+    SUM(CASE WHEN m.is_gluten_free_flag = 'Y' THEN 1 ELSE 0 END)
+        AS gluten_free_item_count,
+    SUM(CASE WHEN m.is_dairy_free_flag = 'Y' THEN 1 ELSE 0 END)
+        AS dairy_free_item_count,
+    SUM(CASE WHEN m.is_nut_free_flag = 'Y' THEN 1 ELSE 0 END)
+        AS nut_free_item_count
+FROM analytics.menu_v AS m
+WHERE m.brand_name IN ('Plant Palace', 'Peking Truck', 'Revenge of the Curds')
 GROUP BY m.brand_name;
 
 
-/*----------------------------------------------------------------------------------
+/*------------------------------------------------------------------------
  リセットスクリプト
- 
-  このビネットを再実行するために必要な状態にアカウントをリセットするには、
-  以下のスクリプトを実行します。
-----------------------------------------------------------------------------------*/
+
+  このビネットを再実行するために必要な状態にアカウントを
+  リセットするには、以下のスクリプトを実行します。
+------------------------------------------------------------------------*/
 USE ROLE accountadmin;
 
 -- drop the Harmonized Menu View

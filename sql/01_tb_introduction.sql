@@ -1,22 +1,23 @@
-/***************************************************************************************************
-  _______           _            ____          _             
- |__   __|         | |          |  _ \        | |            
-    | |  __ _  ___ | |_  _   _  | |_) | _   _ | |_  ___  ___ 
+/******************************************************************************
+  _______           _            ____          _
+ |__   __|         | |          |  _ \        | |
+    | |  __ _  ___ | |_  _   _  | |_) | _   _ | |_  ___  ___
     | | / _` |/ __|| __|| | | | |  _ < | | | || __|/ _ \/ __|
     | || (_| |\__ \| |_ | |_| | | |_) || |_| || |_|  __/\__ \
     |_| \__,_||___/ \__| \__, | |____/  \__, | \__|\___||___/
-                          __/ |          __/ |               
-                         |___/          |___/            
+                          __/ |          __/ |
+                         |___/          |___/
 Quickstart:   Tasty Bytes - Zero to Snowflake - Introduction
-Version:      v2     
+Version:      v2
 Author:       Jacob Kranzler
-Copyright(c): 2024 Snowflake Inc. All rights reserved.
-****************************************************************************************************
+Copyright(c): 2025 Snowflake Inc. All rights reserved.
+*******************************************************************************
 SUMMARY OF CHANGES
 Date(yyyy-mm-dd)    Author              Comments
-------------------- ------------------- ------------------------------------------------------------
+------------------- ------------------- ---------------------------------------
 2024-05-23          Jacob Kranzler      Initial Release
-***************************************************************************************************/
+2025-01-11          Sho Tanaka          Initial commit with JA
+*******************************************************************************
 
 USE ROLE sysadmin;
 
@@ -40,20 +41,21 @@ CREATE OR REPLACE SCHEMA tb_101.harmonized;
 CREATE OR REPLACE SCHEMA tb_101.analytics;
 
 -- ウェアハウスの作成
+-- 初期データロード用にLargeで設定 - このスクリプトの終了時にXSmallにスケールダウン
 CREATE OR REPLACE WAREHOUSE tb_de_wh
-    WAREHOUSE_SIZE = 'large' -- 初期データロード用にLargeで設定 - このスクリプトの終了時にXSmallにスケールダウン
+    WAREHOUSE_SIZE = 'large'
     WAREHOUSE_TYPE = 'standard'
     AUTO_SUSPEND = 60
     AUTO_RESUME = TRUE
     INITIALLY_SUSPENDED = TRUE
-COMMENT = 'data engineering warehouse for tasty bytes';
+    COMMENT = 'data engineering warehouse for tasty bytes';
 
 CREATE OR REPLACE WAREHOUSE tb_dev_wh
-    WAREHOUSE_SIZE = 'xsmall'
-    WAREHOUSE_TYPE = 'standard'
-    AUTO_SUSPEND = 60
-    AUTO_RESUME = TRUE
-    INITIALLY_SUSPENDED = TRUE
+WAREHOUSE_SIZE = 'xsmall'
+WAREHOUSE_TYPE = 'standard'
+AUTO_SUSPEND = 60
+AUTO_RESUME = TRUE
+INITIALLY_SUSPENDED = TRUE
 COMMENT = 'developer warehouse for tasty bytes';
 
 -- ★★★ Stop ★★★
@@ -63,14 +65,14 @@ USE ROLE securityadmin;
 
 -- 機能ロール
 CREATE ROLE IF NOT EXISTS tb_admin
-    COMMENT = 'admin for tasty bytes';
-    
+COMMENT = 'admin for tasty bytes';
+
 CREATE ROLE IF NOT EXISTS tb_data_engineer
-    COMMENT = 'data engineer for tasty bytes';
-    
+COMMENT = 'data engineer for tasty bytes';
+
 CREATE ROLE IF NOT EXISTS tb_dev
-    COMMENT = 'developer for tasty bytes';
-    
+COMMENT = 'developer for tasty bytes';
+
 -- ロールの階層設定
 GRANT ROLE tb_admin TO ROLE sysadmin;
 GRANT ROLE tb_data_engineer TO ROLE tb_admin;
@@ -120,7 +122,8 @@ GRANT ALL ON FUTURE TABLES IN SCHEMA tb_101.raw_pos TO ROLE tb_data_engineer;
 GRANT ALL ON FUTURE TABLES IN SCHEMA tb_101.raw_pos TO ROLE tb_dev;
 
 GRANT ALL ON FUTURE TABLES IN SCHEMA tb_101.raw_customer TO ROLE tb_admin;
-GRANT ALL ON FUTURE TABLES IN SCHEMA tb_101.raw_customer TO ROLE tb_data_engineer;
+GRANT ALL ON FUTURE TABLES IN SCHEMA tb_101.raw_customer
+    TO ROLE tb_data_engineer;
 GRANT ALL ON FUTURE TABLES IN SCHEMA tb_101.raw_customer TO ROLE tb_dev;
 
 GRANT ALL ON FUTURE VIEWS IN SCHEMA tb_101.harmonized TO ROLE tb_admin;
@@ -135,7 +138,7 @@ GRANT ALL ON FUTURE VIEWS IN SCHEMA tb_101.analytics TO ROLE tb_dev;
 USE ROLE accountadmin;
 GRANT APPLY MASKING POLICY ON ACCOUNT TO ROLE tb_admin;
 GRANT APPLY MASKING POLICY ON ACCOUNT TO ROLE tb_data_engineer;
-  
+
 -- raw_pos テーブルの構築
 USE ROLE sysadmin;
 USE WAREHOUSE tb_de_wh;
@@ -144,13 +147,13 @@ USE WAREHOUSE tb_de_wh;
  • ファイルフォーマットと外部ステージの作成
 --*/
 
-CREATE OR REPLACE FILE FORMAT tb_101.public.csv_ff 
-type = 'csv';
+CREATE OR REPLACE FILE FORMAT tb_101.public.csv_ff
+TYPE = 'csv';
 
 CREATE OR REPLACE STAGE tb_101.public.s3load
-COMMENT = 'Quickstarts S3 Stage Connection'
-url = 's3://sfquickstarts/frostbyte_tastybytes/'
-file_format = tb_101.public.csv_ff;
+    URL = 's3://sfquickstarts/frostbyte_tastybytes/'
+    FILE_FORMAT = tb_101.public.csv_ff
+    COMMENT = 'Quickstarts S3 Stage Connection';
 
 -- ★★★ Stop ★★★
 
@@ -161,31 +164,31 @@ file_format = tb_101.public.csv_ff;
 -- country テーブルの作成
 CREATE OR REPLACE TABLE tb_101.raw_pos.country
 (
-    country_id NUMBER(18,0),
+    country_id NUMBER(18, 0),
     country VARCHAR(16777216),
     iso_currency VARCHAR(3),
     iso_country VARCHAR(2),
-    city_id NUMBER(19,0),
+    city_id NUMBER(19, 0),
     city VARCHAR(16777216),
     city_population VARCHAR(16777216)
 );
 
 -- franchise テーブル作成
-CREATE OR REPLACE TABLE tb_101.raw_pos.franchise 
+CREATE OR REPLACE TABLE tb_101.raw_pos.franchise
 (
-    franchise_id NUMBER(38,0),
+    franchise_id NUMBER(38, 0),
     first_name VARCHAR(16777216),
     last_name VARCHAR(16777216),
     city VARCHAR(16777216),
     country VARCHAR(16777216),
     e_mail VARCHAR(16777216),
-    phone_number VARCHAR(16777216) 
+    phone_number VARCHAR(16777216)
 );
 
 -- location テーブル作成
 CREATE OR REPLACE TABLE tb_101.raw_pos.location
 (
-    location_id NUMBER(19,0),
+    location_id NUMBER(19, 0),
     placekey VARCHAR(16777216),
     location VARCHAR(16777216),
     city VARCHAR(16777216),
@@ -197,77 +200,77 @@ CREATE OR REPLACE TABLE tb_101.raw_pos.location
 -- menu テーブル作成
 CREATE OR REPLACE TABLE tb_101.raw_pos.menu
 (
-    menu_id NUMBER(19,0),
-    menu_type_id NUMBER(38,0),
+    menu_id NUMBER(19, 0),
+    menu_type_id NUMBER(38, 0),
     menu_type VARCHAR(16777216),
     truck_brand_name VARCHAR(16777216),
-    menu_item_id NUMBER(38,0),
+    menu_item_id NUMBER(38, 0),
     menu_item_name VARCHAR(16777216),
     item_category VARCHAR(16777216),
     item_subcategory VARCHAR(16777216),
-    cost_of_goods_usd NUMBER(38,4),
-    sale_price_usd NUMBER(38,4),
+    cost_of_goods_usd NUMBER(38, 4),
+    sale_price_usd NUMBER(38, 4),
     menu_item_health_metrics_obj VARIANT
 );
 
 -- truck テーブル作成
 CREATE OR REPLACE TABLE tb_101.raw_pos.truck
 (
-    truck_id NUMBER(38,0),
-    menu_type_id NUMBER(38,0),
+    truck_id NUMBER(38, 0),
+    menu_type_id NUMBER(38, 0),
     primary_city VARCHAR(16777216),
     region VARCHAR(16777216),
     iso_region VARCHAR(16777216),
     country VARCHAR(16777216),
     iso_country_code VARCHAR(16777216),
-    franchise_flag NUMBER(38,0),
-    year NUMBER(38,0),
+    franchise_flag NUMBER(38, 0),
+    year NUMBER(38, 0),
     make VARCHAR(16777216),
     model VARCHAR(16777216),
-    ev_flag NUMBER(38,0),
-    franchise_id NUMBER(38,0),
+    ev_flag NUMBER(38, 0),
+    franchise_id NUMBER(38, 0),
     truck_opening_date DATE
 );
 
 -- order_header テーブル作成
 CREATE OR REPLACE TABLE tb_101.raw_pos.order_header
 (
-    order_id NUMBER(38,0),
-    truck_id NUMBER(38,0),
+    order_id NUMBER(38, 0),
+    truck_id NUMBER(38, 0),
     location_id FLOAT,
-    customer_id NUMBER(38,0),
+    customer_id NUMBER(38, 0),
     discount_id VARCHAR(16777216),
-    shift_id NUMBER(38,0),
+    shift_id NUMBER(38, 0),
     shift_start_time TIME(9),
     shift_end_time TIME(9),
     order_channel VARCHAR(16777216),
     order_ts TIMESTAMP_NTZ(9),
     served_ts VARCHAR(16777216),
     order_currency VARCHAR(3),
-    order_amount NUMBER(38,4),
+    order_amount NUMBER(38, 4),
     order_tax_amount VARCHAR(16777216),
     order_discount_amount VARCHAR(16777216),
-    order_total NUMBER(38,4)
+    order_total NUMBER(38, 4)
 );
 
 -- order_detail テーブル作成
-CREATE OR REPLACE TABLE tb_101.raw_pos.order_detail 
+CREATE OR REPLACE TABLE tb_101.raw_pos.order_detail
 (
-    order_detail_id NUMBER(38,0),
-    order_id NUMBER(38,0),
-    menu_item_id NUMBER(38,0),
+    order_detail_id NUMBER(38, 0),
+    order_id NUMBER(38, 0),
+    menu_item_id NUMBER(38, 0),
     discount_id VARCHAR(16777216),
-    line_number NUMBER(38,0),
-    quantity NUMBER(5,0),
-    unit_price NUMBER(38,4),
-    price NUMBER(38,4),
+    line_number NUMBER(38, 0),
+    quantity NUMBER(5, 0),
+    unit_price NUMBER(38, 4),
+    price NUMBER(38, 4),
     order_item_discount_amount VARCHAR(16777216)
 );
 
 -- customer_loyalty テーブル作成
 CREATE OR REPLACE TABLE tb_101.raw_customer.customer_loyalty
 (
-    customer_id NUMBER(38,0),
+    customer_id NUMBER(38, 0),
     first_name VARCHAR(16777216),
     last_name VARCHAR(16777216),
     city VARCHAR(16777216),
@@ -291,7 +294,7 @@ CREATE OR REPLACE TABLE tb_101.raw_customer.customer_loyalty
 -- orders_v ビュー
 CREATE OR REPLACE VIEW tb_101.harmonized.orders_v
     AS
-SELECT 
+SELECT
     oh.order_id,
     oh.truck_id,
     oh.order_ts,
@@ -324,24 +327,24 @@ SELECT
     oh.order_tax_amount,
     oh.order_discount_amount,
     oh.order_total
-FROM tb_101.raw_pos.order_detail od
-JOIN tb_101.raw_pos.order_header oh
+FROM tb_101.raw_pos.order_detail AS od
+INNER JOIN tb_101.raw_pos.order_header AS oh
     ON od.order_id = oh.order_id
-JOIN tb_101.raw_pos.truck t
+INNER JOIN tb_101.raw_pos.truck AS t
     ON oh.truck_id = t.truck_id
-JOIN tb_101.raw_pos.menu m
+INNER JOIN tb_101.raw_pos.menu AS m
     ON od.menu_item_id = m.menu_item_id
-JOIN tb_101.raw_pos.franchise f
+INNER JOIN tb_101.raw_pos.franchise AS f
     ON t.franchise_id = f.franchise_id
-JOIN tb_101.raw_pos.location l
+INNER JOIN tb_101.raw_pos.location AS l
     ON oh.location_id = l.location_id
-LEFT JOIN tb_101.raw_customer.customer_loyalty cl
+LEFT JOIN tb_101.raw_customer.customer_loyalty AS cl
     ON oh.customer_id = cl.customer_id;
 
 -- loyalty_metrics_v ビュー作成
 CREATE OR REPLACE VIEW tb_101.harmonized.customer_loyalty_metrics_v
     AS
-SELECT 
+SELECT
     cl.customer_id,
     cl.city,
     cl.country,
@@ -351,8 +354,8 @@ SELECT
     cl.e_mail,
     SUM(oh.order_total) AS total_sales,
     ARRAY_AGG(DISTINCT oh.location_id) AS visited_location_ids_array
-FROM tb_101.raw_customer.customer_loyalty cl
-JOIN tb_101.raw_pos.order_header oh
+FROM tb_101.raw_customer.customer_loyalty AS cl
+INNER JOIN tb_101.raw_pos.order_header AS oh
 ON cl.customer_id = oh.customer_id
 GROUP BY cl.customer_id, cl.city, cl.country, cl.first_name,
 cl.last_name, cl.phone_number, cl.e_mail;
@@ -365,7 +368,10 @@ cl.last_name, cl.phone_number, cl.e_mail;
 CREATE OR REPLACE VIEW tb_101.analytics.orders_v
 COMMENT = 'Tasty Bytes Order Detail View'
     AS
-SELECT DATE(o.order_ts) AS date, * FROM tb_101.harmonized.orders_v o;
+SELECT
+    *,
+    DATE(order_ts) AS date
+FROM tb_101.harmonized.orders_v;
 
 -- customer_loyalty_metrics_v ビュー作成
 CREATE OR REPLACE VIEW tb_101.analytics.customer_loyalty_metrics_v
@@ -380,7 +386,7 @@ SELECT * FROM tb_101.harmonized.customer_loyalty_metrics_v;
 --*/
 
 -- ステージ上のファイルをls で確認
-ls @tb_101.public.s3load/raw_pos/;
+LS @tb_101.public.s3load/raw_pos/;
 
 -- country テーブルへのロード
 COPY INTO tb_101.raw_pos.country
