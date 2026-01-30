@@ -1,0 +1,28 @@
+name: SQLFluff Lint
+
+on:
+  pull_request:
+    paths:
+      - 'sql/**'
+      - '.sqlfluff'
+      - '.github/workflows/sqlfluff.yml'
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      - name: Set up Python
+        run: uv python install
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Run SQLFluff lint
+        run: uv run sqlfluff lint sql/
