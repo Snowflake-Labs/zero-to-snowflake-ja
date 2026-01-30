@@ -1,0 +1,6 @@
+[sqlfluff]
+dialect = snowflake
+templater = raw
+max_line_length = 80
+exclude_rules = LT02, AM04, RF04
+large_file_skip_byte_limit = 30000
