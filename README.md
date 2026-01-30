@@ -31,7 +31,8 @@ Snowflake の基本機能を学ぶためのハンズオンチュートリアル�
 ## 参考リンク
 
 - [Snowflake Documentation](https://docs.snowflake.com/)
-- [Tasty Bytes Quickstarts](https://www.snowflake.com/ja/developers/guides/tasty-bytes-introduction-ja/)
+- [Tasty Bytes - Zero to Snowflake](https://quickstarts.snowflake.com/guide/tasty_bytes_introduction/index.html)
+- [Tasty Bytes Quickstarts - 日本語版（英語版の一部のみ）](https://www.snowflake.com/ja/developers/guides/tasty-bytes-introduction-ja/)
 
 ## License
 
