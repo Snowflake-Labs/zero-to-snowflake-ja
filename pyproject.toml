@@ -1,0 +1,13 @@
+[project]
+name = "zero-to-snowflake-ja"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "sqlfluff>=3.5.0",
+]
+
+
+[tool.sqlfluff.core]
+dialect = "snowflake"
