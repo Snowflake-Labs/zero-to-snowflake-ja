@@ -380,7 +380,7 @@ AS(val STRING) RETURNS STRING -> (
         WHEN SYSTEM$GET_TAG_ON_CURRENT_COLUMN('TAGS.TASTY_PII') = 'EMAIL'
             THEN CONCAT('**~MASKED~**', '@', SPLIT_PART(val, '@', -1))
         ELSE '**~MASKED~**'
-    END;
+    END);
 -- noqa: enable=all
 
 /**

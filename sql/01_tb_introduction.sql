@@ -122,6 +122,10 @@ GRANT ALL ON SCHEMA tb_101.analytics TO ROLE tb_admin;
 GRANT ALL ON SCHEMA tb_101.analytics TO ROLE tb_data_engineer;
 GRANT ALL ON SCHEMA tb_101.analytics TO ROLE tb_dev;
 
+GRANT ALL ON SCHEMA tb_101.public TO ROLE tb_admin;
+GRANT ALL ON SCHEMA tb_101.public TO ROLE tb_data_engineer;
+GRANT ALL ON SCHEMA tb_101.public TO ROLE tb_dev;
+
 -- ウェアハウスの権限付与
 GRANT OWNERSHIP ON WAREHOUSE tb_de_wh TO ROLE tb_admin COPY CURRENT GRANTS;
 GRANT ALL ON WAREHOUSE tb_de_wh TO ROLE tb_admin;
