@@ -406,9 +406,11 @@ AS (val DATE) RETURNS DATE -> (
 -- noqa: enable=all
 
 -- これで、ALTER TAGステートメントを使用して、PIIタグ付き列にマスキングポリシーを設定できるようになりました。
-ALTER TAG tags.tasty_pii SET MASKING POLICY governance.tasty_pii_string_mask;
-ALTER TAG tags.tasty_pii SET MASKING POLICY governance.tasty_pii_date_mask;
-
+-- noqa: disable=PRS
+ALTER TAG tags.tasty_pii SET
+    MASKING POLICY governance.tasty_pii_string_mask,
+    MASKING POLICY governance.tasty_pii_date_mask;
+-- noqa: enable=PRS
 
 -- タグベースのマスキングをそのまま使用して、テストロールと開発用ウェアハウスを使用して作業をテストしてみましょう。
 USE ROLE tb_test_role;
