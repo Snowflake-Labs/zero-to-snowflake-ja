@@ -307,7 +307,7 @@ INNER JOIN analytics.menu_v AS m2
 WHERE 1 = 1
     AND m1.item_category <> 'Beverage' -- 飲料を除外
     AND ARRAYS_OVERLAP(m1.ingredients, m2.ingredients) -- 重複する成分を持つもののみを返す
-ORDER BY ARRAY_SIZE(overlapping_ingredients) DESC;-- 重複する成分の数が多い順に並べる
+ORDER BY ARRAY_SIZE(overlapping_ingredients) DESC; -- 重複する成分の数が多い順に並べる
 
     /**
      Array_intersection: 2つの入力配列に含まれる共通の要素を含む配列を返します。
